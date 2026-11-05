@@ -349,7 +349,8 @@ function initQuiz(quizId) {
 
   q.readings.forEach((idx, ri) => {
     const r = readings[idx];
-    let rhtml = `<h4>閱讀 ${ri+1}：${r.title}</h4><div class="passage">${r.passage.replace(/\\n/g, '<br>')}</div>`;
+    let rhtml = `<h4>閱讀 ${ri+1}：${r.title}</h4><div class="passage">${r.passage.replace(/
+/g, '<br>')}</div>`;
     r.questions.forEach((qq, qi) => {
       rhtml += `<div class="question"><strong>${qi+1}. ${qq.q}</strong><br>`;
       if (qq.type === 'fill') {
