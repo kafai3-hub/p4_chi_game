@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小四中文小測 - iPad 點擊版</title>
+<style>
+* { box-sizing: border-box; }
+body { font-family: "PingFang HK", "Microsoft JhengHei", sans-serif; margin: 0; background: #f5f7fa; color: #333; }
+header { background: #2c3e50; color: white; padding: 1rem; text-align: center; }
+nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin: 1rem; }
+nav button { padding: 0.7rem 1.2rem; border: none; background: #3498db; color: white; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+nav button.active { background: #2980b9; }
+.section { display: none; max-width: 900px; margin: 1rem auto; padding: 1rem; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.section.active { display: block; }
+h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 0.4rem; }
+.quiz-part { margin: 1.2rem 0; padding: 1rem; background: #f8f9fa; border-radius: 8px; }
+.source-row, .answer-line { display: flex; flex-wrap: wrap; gap: 0.4rem; min-height: 50px; padding: 0.6rem; border-radius: 6px; margin: 0.5rem 0; }
+.source-row { background: #ecf0f1; border: 1px solid #bdc3c7; }
+.answer-line { background: #e8f6f3; border: 2px dashed #27ae60; }
+.answer-line:empty::before { content: "把詞語拖到這裡"; color: #95a5a6; font-style: italic; }
+.drag-item { background: #fff; padding: 0.5rem 0.8rem; border: 1px solid #3498db; border-radius: 6px; cursor: grab; user-select: none; }
+.drag-item:active { cursor: grabbing; opacity: 0.7; }
+.drag-item button { margin-left: 0.3rem; padding: 0.1rem 0.4rem; font-size: 0.75rem; cursor: pointer; }
+.drag-item.over { border-color: #e74c3c; }
+button.submit { background: #27ae60; color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 6px; font-size: 1.1rem; margin: 1rem 0; cursor: pointer; }
+.result { margin-top: 1rem; padding: 1rem; background: #e8f6f3; border-radius: 6px; display: none; }
+.result.show { display: block; }
+.correct { color: #27ae60; font-weight: bold; }
+.wrong { color: #e74c3c; font-weight: bold; }
+.passage { background: #fff; padding: 1rem; border-left: 4px solid #3498db; margin: 1rem 0; line-height: 1.7; }
+.question { margin: 1rem 0; }
+.mcq label { display: block; margin: 0.3rem 0; padding: 0.4rem; background: #f8f9fa; border-radius: 4px; cursor: pointer; }
+input[type="text"] { padding: 0.5rem; width: 100%; max-width: 280px; font-size: 1rem; }
+.dashboard-card { font-size: 0.85rem; padding: 0.6rem; margin: 0.4rem 0; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
+.log-item { font-size: 0.75rem; margin: 0.2rem 0; padding: 0.3rem; background: #fff3cd; border-radius: 4px; }
+.score { font-size: 1.1rem; font-weight: bold; }
+</style>
+</head>
+<body>
+<header>
+  <h1>小四中文小測</h1>
+  <p>每一小測：4題重組句子 + 4題排句成段 + 2篇閱讀理解 | iPad 點擊版</p>
+</header>
+
+<nav>
+  <button onclick="showSection('quiz1', this)" class="active">小測 1</button>
+  <button onclick="showSection('quiz2', this)">小測 2</button>
+  <button onclick="showSection('dashboard', this)">答題總結</button>
+</nav>
+
+<div id="quiz1" class="section active">
+  <h2>小測 1</h2>
+  <div id="q1content"></div>
+  <button class="submit" onclick="submitQuiz(1)">提交小測 1 並查看答案</button>
+  <div id="q1result" class="result"></div>
+</div>
+
+<div id="quiz2" class="section">
+  <h2>小測 2</h2>
+  <div id="q2content"></div>
+  <button class="submit" onclick="submitQuiz(2)">提交小測 2 並查看答案</button>
+  <div id="q2result" class="result"></div>
+</div>
+
+<div id="dashboard" class="section">
+  <h2 style="font-size:1.1rem;">答題總結</h2>
+  <div id="dashContent">載入中...</div>
+  <button onclick="clearLogs()" style="font-size:0.85rem; padding:0.4rem 0.8rem; margin-top:0.5rem;">清除所有紀錄</button>
+</div>
+
+<script>
+const STORAGE_KEY = 'p4chinese_logs';
+function getLogs() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+function saveLog(entry) {
+  const logs = getLogs();
+  logs.push({ ...entry, time: new Date().toLocaleString('zh-HK') });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+}
+
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (id === 'dashboard') renderDashboard();
+}
+
+function clearLogs() {
+  if (confirm('確定清除所有作答紀錄？')) {
+    localStorage.removeItem(STORAGE_KEY);
+    renderDashboard();
+  }
+}
+
+function renderDashboard() {
+  const logs = getLogs();
+  const div = document.getElementById('dashContent');
+  if (logs.length === 0) {
+    div.innerHTML = '<p>尚無作答紀錄。</p>';
+    return;
+  }
+  const bySection = {};
+  logs.forEach(l => {
+    if (!bySection[l.section]) bySection[l.section] = { total: 0, correct: 0, wrongs: [] };
+    bySection[l.section].total++;
+    if (l.correct) bySection[l.section].correct++;
+    else bySection[l.section].wrongs.push(l);
+  });
+  let html = `<div class="score">總作答次數：${logs.length}</div>`;
+  Object.keys(bySection).forEach(sec => {
+    const s = bySection[sec];
+    const rate = Math.round(s.correct / s.total * 100);
+    html += `<div class="dashboard-card"><strong>${sec}</strong><br>正確率：${rate}% (${s.correct}/${s.total})`;
+    if (s.wrongs.length) {
+      html += '<div style="margin-top:0.4rem;"><small>最近錯誤：</small>';
+      s.wrongs.slice(-3).forEach(w => {
+        html += `<div class="log-item">${w.time} - ${w.detail || ''}</div>`;
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+  div.innerHTML = html;
+}
+
+// 重組句子資料
+const reorderData = [
+  { id: 1, parts: ['老師', '耐心', '經過', '我', '指導', '的', '終於', '明白', '，', '。'], answer: '經過老師耐心的指導，我終於明白。', explain: '先講「經過老師的指導」，再講結果「我終於明白」。' },
+  { id: 2, parts: ['煙花', '夜空', '五彩', '點綴', '的', '美麗', '極了', '，', '。'], answer: '五彩的煙花點綴夜空，美麗極了。', explain: '形容詞「五彩的」修飾「煙花」，再描述效果。' },
+  { id: 3, parts: ['專題', '為了', '報告', '我們', '完成', '了', '許多', '資料', '搜集', '，', '。'], answer: '為了完成專題報告，我們搜集了許多資料。', explain: '「為了」引導目的，再寫行動。' },
+  { id: 4, parts: ['妹妹', '開心', '地', '吃着', '蛋糕', '感到', '很', '生日', '，', '。'], answer: '妹妹開心地吃着生日蛋糕，感到很滿足。', explain: '「開心」描述動作，「滿足」描述感覺。' },
+  { id: 5, parts: ['危急', '關頭', '在', '他', '幫了', '我', '一個', '大忙', '，', '我', '十分', '感激', '他', '。'], answer: '在危急關頭，他幫了我一個大忙，我十分感激他。', explain: '時間狀語放前面。' },
+  { id: 6, parts: ['弟弟', '膽小', '怕事', '，', '不肯', '嘗試', '新事物', '，', '常常', '躲在', '媽媽', '身後', '。'], answer: '弟弟膽小怕事，不肯嘗試新事物，常常躲在媽媽身後。', explain: '性格描述 + 行為結果。' },
+  { id: 7, parts: ['圖書館', '安靜', '的', '環境', '讓', '我', '可以', '專心', '溫習', '，', '。'], answer: '圖書館安靜的環境讓我可以專心溫習。', explain: '主語是「環境」，使役動詞「讓」。' },
+  { id: 8, parts: ['下雨天', '我們', '改', '在', '室內', '進行', '體育課', '，', '以免', '弄濕', '衣服', '。'], answer: '下雨天我們改在室內進行體育課，以免弄濕衣服。', explain: '因果關係：因為下雨所以改地點。' }
+];
+
+// 排句成段資料
+const paraData = [
+  { id: 1, sentences: [
+    {k:'A', t:'因此我們決定下星期再去一次'},
+    {k:'B', t:'上次去海洋公園玩得很開心。'},
+    {k:'C', t:'不過那天人太多，很多機動遊戲都要排很久的隊'},
+    {k:'D', t:'大家都很期待再見到可愛的海豚。'}
+  ], answer: 'B C A D', explain: '先講上次開心，再講問題，然後決定再去，最後期待。' },
+  { id: 2, sentences: [
+    {k:'A', t:'但長期進食煎炸油膩的食物容易導致肥胖。'},
+    {k:'B', t:'炸雞雖然香脆可口。'},
+    {k:'C', t:'我們還是盡量少吃。'},
+    {k:'D', t:'多吃蔬菜水果才是健康的選擇。'}
+  ], answer: 'B A C D', explain: '讓步 → 問題 → 建議 → 更好的選擇。' },
+  { id: 3, sentences: [
+    {k:'A', t:'細心的觀眾早知道誰勝誰負。'},
+    {k:'B', t:'在芭蕾舞比賽中。'},
+    {k:'C', t:'美怡跳躍時手腳略有些不協調。'},
+    {k:'D', t:'反觀婷婷卻能在輕巧的跳躍中連成修長的直線。'}
+  ], answer: 'B C D A', explain: '背景 → 對比兩人表現 → 觀眾判斷。' },
+  { id: 4, sentences: [
+    {k:'A', t:'媽媽立刻帶我去看醫生。'},
+    {k:'B', t:'昨天我突然發燒了。'},
+    {k:'C', t:'醫生說我只是着涼，要多休息。'},
+    {k:'D', t:'吃了藥後，今天已經好多了。'}
+  ], answer: 'B A C D', explain: '時間順序：發燒 → 看醫生 → 診斷 → 康復。' },
+  { id: 5, sentences: [
+    {k:'A', t:'大家都很認真地完成作業。'},
+    {k:'B', t:'老師宣佈下星期有測驗。'},
+    {k:'C', t:'因為這次測驗佔分數很重。'},
+    {k:'D', t:'所以我們放學後都留在課室溫習。'}
+  ], answer: 'B C D A', explain: '宣布 → 原因 → 行動 → 結果。' },
+  { id: 6, sentences: [
+    {k:'A', t:'小明把垃圾分類後放進回收箱。'},
+    {k:'B', t:'保護環境是每個人的責任。'},
+    {k:'C', t:'他希望更多同學都能養成這個好習慣。'},
+    {k:'D', t:'這樣可以減少垃圾，讓地球更乾淨。'}
+  ], answer: 'B A D C', explain: '總述 → 具體行動 → 效果 → 期望。' },
+  { id: 7, sentences: [
+    {k:'A', t:'我們先參觀了恐龍化石展。'},
+    {k:'B', t:'上星期六一家人去了科學館。'},
+    {k:'C', t:'接着又看了有趣的科學實驗表演。'},
+    {k:'D', t:'回家後大家都覺得這次行程很充實。'}
+  ], answer: 'B A C D', explain: '時間順序：去 → 先做 → 接着 → 總結。' },
+  { id: 8, sentences: [
+    {k:'A', t:'但是只要堅持練習，一定會進步。'},
+    {k:'B', t:'剛開始學游泳時，我覺得很困難。'},
+    {k:'C', t:'現在我已經可以自己游完整個泳池了。'},
+    {k:'D', t:'教練常常鼓勵我不要放棄。'}
+  ], answer: 'B D A C', explain: '困難 → 鼓勵 → 堅持 → 成功。' }
+];
+
+// 閱讀資料（精簡）
+const readings = [
+  {
+    id: 1, title: '香江麵包店',
+    passage: `十月五日　星期六\n我家附近有一家新開的麵包店，叫香江麵包店。我每次下課經過那兒，都會聞到一陣濃烈的香氣，令我忍不住踏進去一探究竟。\n一進門，我便看見老闆捧着一盤盤新鮮出爐的麵包出來。其中最吸引我的，莫過於那外皮烤得金黃香脆的菠蘿包。我迫不及待地從口袋裏掏出零用錢，買了一個來吃。我吃着還有點燙的酥脆外皮，感覺就像在吃甜甜的薯片一樣。與外皮截然不同，菠蘿包的內部非常柔軟，牛奶和奶油的香氣迴盪着，令我感到格外滿足。\n我邊吃邊想：這麼美味的麵包，怎能獨享呢？我得買一些給妹妹才行。老闆熱情地向我推介：「不如嘗嘗這款形狀可愛、像個大貝殼一樣的火腿卷？」我搖了搖頭，心想：比起鹹的麵包，妹妹比較喜歡吃甜的。忽然，我的目光定格在一款水果蛋糕上，再也移不開。軟綿綿的蛋糕上鋪滿了一層層的鮮奶油，頂層還放滿了色彩繽紛的水果——紅紅的草莓、黃黃的芒果和綠綠的蜜瓜。老闆還特意把水果弄成圓滾滾的形狀，看起來就像一顆顆耀目的珍珠，好看極了！就是它了！\n結賬後，我捧着給妹妹的水果蛋糕，一邊走回家，一邊想：明天買哪款麵包好呢？`,
+    questions: [
+      { type: 'fill', q: '請在第3段找出適當詞語：水果看起來就像一顆顆______的珍珠。', ans: '耀目', explain: '第3段用「耀目的珍珠」。' },
+      { type: 'mcq', q: '根據第2段，菠蘿包的外皮是怎樣的？', options: ['A. 柔軟', 'B. 金黃香脆', 'C. 放滿水果', 'D. 有火腿'], ans: 'B', explain: '第2段寫「外皮烤得金黃香脆」。' },
+      { type: 'mcq', q: '這篇文章的主旨是甚麼？', options: ['A. 介紹香江麵包店的特色。', 'B. 描寫品嚐菠蘿包的五感。', 'C. 記述作者逛麵包店的所見所聞。', 'D. 作者如何為妹妹挑選麵包。'], ans: 'C', explain: '全文以日記記錄過程。' },
+      { type: 'mcq', q: '作者最後買了甚麼給妹妹？', options: ['A. 菠蘿包', 'B. 火腿卷', 'C. 水果蛋糕', 'D. 薯片'], ans: 'C', explain: '第3段末「就是它了」。' },
+      { type: 'fill', q: '請在第1段找出適當詞語：作者每次下課經過都會聞到一陣______的香氣。', ans: '濃烈', explain: '第1段「一陣濃烈的香氣」。' }
+    ]
+  },
+  {
+    id: 2, title: '小麻雀的故事',
+    passage: `一個寒冷的中午，小麻雀躲在樹上的鳥窩裏，不願意起牀。他沒有朋友，即使起來了，也是過着孤單、沉悶的日子。\n這時候，小黃狗來到樹下。他知道小麻雀孤單，於是邀請他一起玩耍。小麻雀飛到樹下，可是他一看見小黃狗，就害怕得縮成一團。小黃狗還未說話，小麻雀就飛走了，心想：小黃狗的身體太龐大了！不知道他會不會咬我，真可怕……\n到了下午，小蝴蝶翩翩飛到花叢，親切地飛近小麻雀，說：「我們做朋友吧！」小麻雀很高興，但忽然想起甚麼，便跟小蝴蝶說：「別人說你貪玩，不勤勞採蜜，儲存冬糧。我——我不想結交懶惰的朋友。」於是，小麻雀與小蝴蝶當不成朋友了。\n小麻雀悶悶不樂，他看見老山羊，問：「山羊伯伯，為甚麼我老是交不到朋友？」\n老山羊語重心長地說：「我年少時，也曾經以貌取人和聽信謠言，結果一個朋友也沒有，後來我知道這是不對的。小黃狗曾送給我鮮美的青草；小蝴蝶的生命只有一至四個月，他不是懶惰，而是希望在有生之年能看遍美麗的大自然。」\n小麻雀聽了山羊的說話後，感到十分慚愧。他決定向小黃狗和小蝴蝶道歉，希望他們原諒自己，並且願意跟他做朋友。`,
+    questions: [
+      { type: 'fill', q: '爸爸(　　)地告誡我。', ans: '語重心長', explain: '山羊語重心長地說。' },
+      { type: 'mcq', q: '為甚麼小麻雀不起牀？', options: ['A. 下雪', 'B. 生病', 'C. 沒喚醒', 'D. 沒有朋友'], ans: 'D', explain: '沒有朋友，孤單沉悶。' }
+    ]
+  },
+  {
+    id: 3, title: '校園清潔日',
+    passage: `上星期五是學校的清潔日。老師把全班分成幾個小組，負責不同的地方。我們小組負責清潔課室的窗和黑板。\n一開始，大家都很起勁。小明負責擦窗，我負責擦黑板。可是擦了不久，小明就說：「好累啊，我休息一下吧。」於是他坐下來玩手機。我雖然也累，但想到如果大家都不做，課室就不會乾淨，所以繼續努力。\n過了半小時，老師來巡視。她看見小明在玩手機，便溫柔地說：「小明，清潔是大家的責任，我們要一起努力才行。」小明聽了很不好意思，立刻起來幫忙。最後，我們小組的課室被評為最乾淨。\n回家後，我告訴媽媽這件事。媽媽說：「能夠堅持完成自己的責任，是很值得驕傲的。」`,
+    questions: [
+      { type: 'fill', q: '老師______地說。', ans: '溫柔', explain: '溫柔地說。' },
+      { type: 'mcq', q: '主旨是甚麼？', options: ['A. 介紹活動', 'B. 責任感', 'C. 批評', 'D. 讚美'], ans: 'B', explain: '強調責任。' }
+    ]
+  },
+  {
+    id: 4, title: '海洋公園之旅',
+    passage: `暑假的一天，爸爸帶我和妹妹去海洋公園。一進園，我們先去看海豚表演。海豚跳得很高，還能跟著音樂跳舞，真是精彩極了！\n接着我們坐了過山車。妹妹一開始很害怕，緊緊抓住我的手。但坐完後她說：「原來沒那麼可怕，下次還要再坐！」\n中午我們吃了漢堡包和薯條。下午我們參觀了熊貓館。熊貓正在吃竹子，動作很慢，看起來很可愛。\n回家的路上，妹妹說：「今天是我最開心的一天！」爸爸笑着說：「只要一家人一起出遊，每天都可以是開心的一天。」`,
+    questions: [
+      { type: 'fill', q: '還能______音樂跳舞。', ans: '跟着', explain: '跟著音樂。' },
+      { type: 'mcq', q: '主旨是甚麼？', options: ['A. 介紹設施', 'B. 一家人開心', 'C. 可怕', 'D. 可愛'], ans: 'B', explain: '一家人出遊快樂。' }
+    ]
+  }
+];
+
+const quizzes = [
+  { id: 1, reorder: [0,1,2,3], para: [0,1,2,3], readings: [0,1] },
+  { id: 2, reorder: [4,5,6,7], para: [4,5,6,7], readings: [2,3] }
+];
+
+// 拖曳功能
+let draggedItem = null;
+
+function makeItem(item) {
+  const up = document.createElement('button');
+  up.textContent = '↑';
+  up.style.cssText = 'margin-left:6px;padding:4px 8px;font-size:16px;';
+  up.onclick = () => moveSibling(item, -1);
+  const down = document.createElement('button');
+  down.textContent = '↓';
+  down.style.cssText = 'margin-left:4px;padding:4px 8px;font-size:16px;';
+  down.onclick = () => moveSibling(item, 1);
+  item.appendChild(up);
+  item.appendChild(down);
+}
+
+function moveSibling(item, dir) {
+  const parent = item.parentNode;
+  const siblings = Array.from(parent.children);
+  const idx = siblings.indexOf(item);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= siblings.length) return;
+  if (dir === -1) parent.insertBefore(item, siblings[newIdx]);
+  else parent.insertBefore(siblings[newIdx], item);
+}
+
+function setupDropZone(zone) {
+  zone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  });
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    if (!draggedItem) return;
+    const afterElement = getDragAfterElement(zone, e.clientX);
+    if (afterElement == null) {
+      zone.appendChild(draggedItem);
+    } else {
+      zone.insertBefore(draggedItem, afterElement);
+    }
+  });
+}
+
+function getDragAfterElement(container, x) {
+  const draggableElements = [...container.querySelectorAll('.drag-item:not(.dragging)')];
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = x - box.left - box.width / 2;
+    if (offset < 0 && offset > closest.offset) {
+      return { offset: offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function initQuiz(quizId) {
+  const q = quizzes.find(x => x.id === quizId);
+  const cont = document.getElementById(`q${quizId}content`);
+  cont.innerHTML = '';
+
+  // 重組句子 - 上方來源 + 下方答題線
+  const reorderPart = document.createElement('div');
+  reorderPart.className = 'quiz-part';
+  reorderPart.innerHTML = '<h3>一、重組句子（從上方拖到下方答題線，可左右調整）</h3>';
+  const reorderCont = document.createElement('div');
+  reorderCont.id = 'reorderQ' + quizId;
+  reorderPart.appendChild(reorderCont);
+  cont.appendChild(reorderPart);
+
+  q.reorder.forEach((idx, i) => {
+    const data = reorderData[idx];
+    const div = document.createElement('div');
+    div.innerHTML = `<h4>第 ${i+1} 題</h4>
+      <div class="source-row" id="source${quizId}_${i}"></div>
+      <div class="answer-line" id="target${quizId}_${i}"></div>`;
+    reorderCont.appendChild(div);
+
+    const source = document.getElementById(`source${quizId}_${i}`);
+    const target = document.getElementById(`target${quizId}_${i}`);
+    setupDropZone(source);
+    setupDropZone(target);
+
+    const shuffled = [...data.parts].sort(() => Math.random() - 0.5);
+    shuffled.forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'drag-item';
+      item.textContent = p;
+      makeItem(item);
+      source.appendChild(item);
+    });
+  });
+
+  // 排句成段（同樣拖曳）
+  const paraPart = document.createElement('div');
+  paraPart.className = 'quiz-part';
+  paraPart.innerHTML = '<h3>二、排句成段（拖曳排列）</h3>';
+  const paraCont = document.createElement('div');
+  paraCont.id = 'paraQ' + quizId;
+  paraPart.appendChild(paraCont);
+  cont.appendChild(paraPart);
+
+  q.para.forEach((idx, i) => {
+    const data = paraData[idx];
+    const div = document.createElement('div');
+    div.innerHTML = `<h4>第 ${i+1} 題</h4><div class="answer-line" id="para${quizId}_${i}"></div>`;
+    paraCont.appendChild(div);
+    const list = document.getElementById(`para${quizId}_${i}`);
+    setupDropZone(list);
+    const shuffled = [...data.sentences].sort(() => Math.random() - 0.5);
+    shuffled.forEach(s => {
+      const item = document.createElement('div');
+      item.className = 'drag-item';
+      item.dataset.key = s.k;
+      item.textContent = `${s.k}. ${s.t}`;
+      makeItem(item);
+      list.appendChild(item);
+    });
+  });
+
+  // 閱讀理解
+  const readPart = document.createElement('div');
+  readPart.className = 'quiz-part';
+  readPart.innerHTML = '<h3>三、閱讀理解</h3>';
+  const readCont = document.createElement('div');
+  readCont.id = 'readQ' + quizId;
+  readPart.appendChild(readCont);
+  cont.appendChild(readPart);
+
+  q.readings.forEach((idx, ri) => {
+    const r = readings[idx];
+    let paras = r.passage.split('\n').filter(p => p.trim());
+    let numbered = paras.map((p, idx) => `<p><strong>第${idx+1}段</strong>　${p}</p>`).join('');
+    let rhtml = `<h4>閱讀 ${ri+1}：${r.title}</h4><div class="passage">${numbered}</div>`;
+    r.questions.forEach((qq, qi) => {
+      rhtml += `<div class="question"><strong>${qi+1}. ${qq.q}</strong><br>`;
+      if (qq.type === 'fill') {
+        rhtml += `<input type="text" id="ans${quizId}_${ri}_${qi}" placeholder="請填寫">`;
+      } else if (qq.type === 'mcq') {
+        qq.options.forEach(opt => {
+          const letter = opt[0];
+          rhtml += `<label class="mcq"><input type="radio" name="q${quizId}_${ri}_${qi}" value="${letter}"> ${opt}</label>`;
+        });
+      }
+      rhtml += '</div>';
+    });
+    readCont.innerHTML += rhtml;
+  });
+}
+
+function submitQuiz(quizId) {
+  const q = quizzes.find(x => x.id === quizId);
+  let html = '<h3>小測結果與解釋</h3>';
+  let totalCorrect = 0;
+  let totalQ = 0;
+
+  html += '<h4>重組句子</h4>';
+  q.reorder.forEach((idx, i) => {
+    const data = reorderData[idx];
+    const list = document.getElementById(`target${quizId}_${i}`);
+    const user = Array.from(list.children).map(c => c.textContent).join('');
+    const isCorrect = user === data.answer;
+    if (isCorrect) totalCorrect++;
+    totalQ++;
+    html += `<p>第 ${i+1} 題：${isCorrect ? '<span class="correct">正確</span>' : '<span class="wrong">錯誤</span>'}<br>
+      你的答案：${user}<br>正確答案：${data.answer}<br>解釋：${data.explain}</p>`;
+    saveLog({ section: `小測${quizId}-重組`, correct: isCorrect, detail: `第${i+1}題：${user}` });
+  });
+
+  html += '<h4>排句成段</h4>';
+  q.para.forEach((idx, i) => {
+    const data = paraData[idx];
+    const list = document.getElementById(`para${quizId}_${i}`);
+    const user = Array.from(list.children).map(c => c.dataset.key).join(' ');
+    const isCorrect = user === data.answer;
+    if (isCorrect) totalCorrect++;
+    totalQ++;
+    html += `<p>第 ${i+1} 題：${isCorrect ? '<span class="correct">正確</span>' : '<span class="wrong">錯誤</span>'}<br>
+      你的順序：${user}<br>正確順序：${data.answer}<br>解釋：${data.explain}</p>`;
+    saveLog({ section: `小測${quizId}-排句`, correct: isCorrect, detail: `第${i+1}題：${user}` });
+  });
+
+  // 閱讀理解
+  html += '<h4>閱讀理解</h4>';
+  q.readings.forEach((idx, ri) => {
+    const r = readings[idx];
+    r.questions.forEach((qq, qi) => {
+      let userAns = '';
+      let isCorrect = false;
+      if (qq.type === 'fill') {
+        const el = document.getElementById(`ans${quizId}_${ri}_${qi}`);
+        userAns = el ? el.value.trim() : '';
+        isCorrect = userAns === qq.ans;
+      } else {
+        const sel = document.querySelector(`input[name="q${quizId}_${ri}_${qi}"]:checked`);
+        userAns = sel ? sel.value : '未選擇';
+        isCorrect = userAns === qq.ans;
+      }
+      if (isCorrect) totalCorrect++;
+      totalQ++;
+      html += `<p>閱讀${ri+1} 第 ${qi+1} 題：${isCorrect ? '<span class="correct">正確</span>' : '<span class="wrong">錯誤</span>'}<br>
+        你的答案：${userAns}<br>正確答案：${qq.ans}<br>解釋：${qq.explain}</p>`;
+      saveLog({ section: `小測${quizId}-閱讀`, correct: isCorrect, detail: `閱讀${ri+1} 第${qi+1}題：${userAns}` });
+    });
+  });
+
+  html = `<div class="score">小測 ${quizId} 得分：${totalCorrect}/${totalQ}</div>` + html;
+  document.getElementById(`q${quizId}result`).innerHTML = html;
+  document.getElementById(`q${quizId}result`).classList.add('show');
+}
+
+window.onload = function() {
+  initQuiz(1);
+  initQuiz(2);
+  renderDashboard();
+};
+</script>
+</body>
+</html>
