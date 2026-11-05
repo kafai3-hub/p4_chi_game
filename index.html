@@ -352,8 +352,9 @@ function initQuiz(quizId) {
 
   q.readings.forEach((idx, ri) => {
     const r = readings[idx];
-    let rhtml = `<h4>閱讀 ${ri+1}：${r.title}</h4><div class="passage">${r.passage.replace(/
-/g, '<br>')}</div>`;
+    let paras = r.passage.split('\n').filter(p => p.trim());
+    let numbered = paras.map((p, idx) => `<p><strong>第${idx+1}段</strong>　${p}</p>`).join('');
+    let rhtml = `<h4>閱讀 ${ri+1}：${r.title}</h4><div class="passage">${numbered}</div>`;
     r.questions.forEach((qq, qi) => {
       rhtml += `<div class="question"><strong>${qi+1}. ${qq.q}</strong><br>`;
       if (qq.type === 'fill') {
