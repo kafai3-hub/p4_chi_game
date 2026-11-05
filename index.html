@@ -46,9 +46,9 @@ input[type="text"] { padding: 0.5rem; width: 100%; max-width: 300px; font-size: 
 </header>
 
 <nav>
-  <button onclick="showSection('dashboard')">📊 答題總結</button>
-  <button onclick="showSection('quiz1')" class="active">小測 1</button>
-  <button onclick="showSection('quiz2')">小測 2</button>
+  <button onclick="showSection('dashboard', this)">📊 答題總結</button>
+  <button onclick="showSection('quiz1', this)" class="active">小測 1</button>
+  <button onclick="showSection('quiz2', this)">小測 2</button>
 </nav>
 
 <div id="quiz1" class="section active">
@@ -82,11 +82,12 @@ function saveLog(entry) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
 }
 
-function showSection(id) {
+function showSection(id, btn) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  event.target.classList.add('active');
+  const section = document.getElementById(id);
+  if (section) section.classList.add('active');
+  if (btn) btn.classList.add('active');
   if (id === 'dashboard') renderDashboard();
 }
 
