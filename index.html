@@ -128,7 +128,7 @@ const reorderData = [
   { id: 1, parts: ['老師', '耐心', '經過', '我', '指導', '的', '終於', '明白', '，', '。'], answer: '經過老師耐心的指導，我終於明白。', explain: '先講「經過老師的指導」，再講結果「我終於明白」。' },
   { id: 2, parts: ['煙花', '夜空', '五彩', '點綴', '的', '美麗', '極了', '，', '。'], answer: '五彩的煙花點綴夜空，美麗極了。', explain: '形容詞「五彩的」修飾「煙花」，再描述效果。' },
   { id: 3, parts: ['專題', '為了', '報告', '我們', '完成', '了', '許多', '資料', '搜集', '，', '。'], answer: '為了完成專題報告，我們搜集了許多資料。', explain: '「為了」引導目的，再寫行動。' },
-  { id: 4, parts: ['妹妹', '滿足', '地', '吃着', '蛋糕', '感到', '很', '生日', '，', '。'], answer: '妹妹滿足地吃着生日蛋糕，感到很滿足。', explain: '注意「生日蛋糕」是完整名詞。' },
+  { id: 4, parts: ['妹妹', '開心', '地', '吃着', '蛋糕', '感到', '很', '生日', '，', '。'], answer: '妹妹開心地吃着生日蛋糕，感到很滿足。', explain: '「開心」描述動作，「滿足」描述感覺。' },
   { id: 5, parts: ['危急', '關頭', '在', '他', '幫了', '我', '一個', '大忙', '，', '我', '十分', '感激', '他', '。'], answer: '在危急關頭，他幫了我一個大忙，我十分感激他。', explain: '時間狀語放前面。' },
   { id: 6, parts: ['弟弟', '膽小', '怕事', '，', '不肯', '嘗試', '新事物', '，', '常常', '躲在', '媽媽', '身後', '。'], answer: '弟弟膽小怕事，不肯嘗試新事物，常常躲在媽媽身後。', explain: '性格描述 + 行為結果。' },
   { id: 7, parts: ['圖書館', '安靜', '的', '環境', '讓', '我', '可以', '專心', '溫習', '，', '。'], answer: '圖書館安靜的環境讓我可以專心溫習。', explain: '主語是「環境」，使役動詞「讓」。' },
@@ -138,9 +138,9 @@ const reorderData = [
 // 排句成段資料
 const paraData = [
   { id: 1, sentences: [
-    {k:'A', t:'因此我們決定下星期再去一次。'},
+    {k:'A', t:'因此我們決定下星期再去一次'},
     {k:'B', t:'上次去海洋公園玩得很開心。'},
-    {k:'C', t:'不過那天人太多，很多機動遊戲都要排很久的隊。'},
+    {k:'C', t:'不過那天人太多，很多機動遊戲都要排很久的隊'},
     {k:'D', t:'大家都很期待再見到可愛的海豚。'}
   ], answer: 'B C A D', explain: '先講上次開心，再講問題，然後決定再去，最後期待。' },
   { id: 2, sentences: [
@@ -338,11 +338,32 @@ function initQuiz(quizId) {
     });
   });
 
-  // 閱讀理解（簡化）
+  // 閱讀理解
   const readPart = document.createElement('div');
   readPart.className = 'quiz-part';
-  readPart.innerHTML = '<h3>三、閱讀理解</h3><p>（閱讀題目內容與之前相同）</p>';
+  readPart.innerHTML = '<h3>三、閱讀理解</h3>';
+  const readCont = document.createElement('div');
+  readCont.id = 'readQ' + quizId;
+  readPart.appendChild(readCont);
   cont.appendChild(readPart);
+
+  q.readings.forEach((idx, ri) => {
+    const r = readings[idx];
+    let rhtml = `<h4>閱讀 ${ri+1}：${r.title}</h4><div class="passage">${r.passage.replace(/\\n/g, '<br>')}</div>`;
+    r.questions.forEach((qq, qi) => {
+      rhtml += `<div class="question"><strong>${qi+1}. ${qq.q}</strong><br>`;
+      if (qq.type === 'fill') {
+        rhtml += `<input type="text" id="ans${quizId}_${ri}_${qi}" placeholder="請填寫">`;
+      } else if (qq.type === 'mcq') {
+        qq.options.forEach(opt => {
+          const letter = opt[0];
+          rhtml += `<label class="mcq"><input type="radio" name="q${quizId}_${ri}_${qi}" value="${letter}"> ${opt}</label>`;
+        });
+      }
+      rhtml += '</div>';
+    });
+    readCont.innerHTML += rhtml;
+  });
 }
 
 function submitQuiz(quizId) {
@@ -375,6 +396,30 @@ function submitQuiz(quizId) {
     html += `<p>第 ${i+1} 題：${isCorrect ? '<span class="correct">正確</span>' : '<span class="wrong">錯誤</span>'}<br>
       你的順序：${user}<br>正確順序：${data.answer}<br>解釋：${data.explain}</p>`;
     saveLog({ section: `小測${quizId}-排句`, correct: isCorrect, detail: `第${i+1}題：${user}` });
+  });
+
+  // 閱讀理解
+  html += '<h4>閱讀理解</h4>';
+  q.readings.forEach((idx, ri) => {
+    const r = readings[idx];
+    r.questions.forEach((qq, qi) => {
+      let userAns = '';
+      let isCorrect = false;
+      if (qq.type === 'fill') {
+        const el = document.getElementById(`ans${quizId}_${ri}_${qi}`);
+        userAns = el ? el.value.trim() : '';
+        isCorrect = userAns === qq.ans;
+      } else {
+        const sel = document.querySelector(`input[name="q${quizId}_${ri}_${qi}"]:checked`);
+        userAns = sel ? sel.value : '未選擇';
+        isCorrect = userAns === qq.ans;
+      }
+      if (isCorrect) totalCorrect++;
+      totalQ++;
+      html += `<p>閱讀${ri+1} 第 ${qi+1} 題：${isCorrect ? '<span class="correct">正確</span>' : '<span class="wrong">錯誤</span>'}<br>
+        你的答案：${userAns}<br>正確答案：${qq.ans}<br>解釋：${qq.explain}</p>`;
+      saveLog({ section: `小測${quizId}-閱讀`, correct: isCorrect, detail: `閱讀${ri+1} 第${qi+1}題：${userAns}` });
+    });
   });
 
   html = `<div class="score">小測 ${quizId} 得分：${totalCorrect}/${totalQ}</div>` + html;
