@@ -19,8 +19,11 @@ h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 0.5rem; }
 .item, .sentence { background: #ecf0f1; margin: 0.3rem; padding: 0.6rem 0.8rem; border-radius: 6px; cursor: grab; border: 1px solid #bdc3c7; display: inline-block; }
 .item:active, .sentence:active { cursor: grabbing; }
 .sortable { min-height: 50px; }
-.sortable.reorder-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; padding: 0.5rem; background: #fff; border: 1px dashed #ccc; border-radius: 6px; margin-bottom: 0.5rem; }
-.answer-line { margin-top: 0.5rem; padding: 0.6rem; background: #f0f8ff; border-radius: 6px; font-weight: bold; }
+.sortable.reorder-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; padding: 0.8rem; background: #fff; border: 2px dashed #3498db; border-radius: 8px; min-height: 60px; margin-bottom: 0.5rem; }
+.answer-zone { margin-top: 0.8rem; padding: 0.8rem; background: #e8f6f3; border: 2px solid #27ae60; border-radius: 8px; min-height: 60px; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.answer-zone.empty::before { content: "把詞語拖到這裡組成句子"; color: #95a5a6; font-style: italic; }
+.item { background: #ecf0f1; margin: 0.2rem; padding: 0.5rem 0.7rem; border-radius: 6px; cursor: grab; border: 1px solid #bdc3c7; display: inline-block; user-select: none; -webkit-user-select: none; touch-action: none; }
+.item:active { cursor: grabbing; background: #d5dbdb; }
 button.submit { background: #27ae60; color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 6px; font-size: 1.1rem; margin: 1rem 0; cursor: pointer; }
 .result { margin-top: 1rem; padding: 1rem; background: #e8f6f3; border-radius: 6px; display: none; }
 .result.show { display: block; }
@@ -43,7 +46,7 @@ input[type="text"] { padding: 0.5rem; width: 100%; max-width: 300px; font-size: 
 </header>
 
 <nav>
-  <button onclick="showSection('dashboard')" class="active">📊 Dashboard</button>
+  <button onclick="showSection('dashboard')" class="active">📊 答題總結</button>
   <button onclick="showSection('quiz1')">小測 1</button>
   <button onclick="showSection('quiz2')">小測 2</button>
 </nav>
@@ -64,7 +67,7 @@ input[type="text"] { padding: 0.5rem; width: 100%; max-width: 300px; font-size: 
 
 <!-- Dashboard 移到最底下 -->
 <div id="dashboard" class="section active">
-  <h2 style="font-size:1.1rem;">家長 Dashboard（細字）</h2>
+  <h2 style="font-size:1.1rem;">答題總結</h2>
   <div id="dashContent">載入中...</div>
   <button onclick="clearLogs()" style="font-size:0.85rem; padding:0.4rem 0.8rem;">清除所有紀錄</button>
 </div>
@@ -245,17 +248,31 @@ function initQuiz(quizId) {
   q.reorder.forEach((idx, i) => {
     const data = reorderData[idx];
     const div = document.createElement('div');
-    div.innerHTML = `<h4>第 ${i+1} 題</h4><div class="sortable reorder-row" id="sort${quizId}_${i}"></div><div class="answer-line" id="ansline${quizId}_${i}" style="display:none;"></div>`;
+    div.innerHTML = `<h4>第 ${i+1} 題</h4>
+      <div class="sortable reorder-row" id="source${quizId}_${i}"></div>
+      <div class="answer-zone empty sortable" id="target${quizId}_${i}"></div>`;
     document.getElementById(`reorderQ${quizId}`).appendChild(div);
-    const list = document.getElementById(`sort${quizId}_${i}`);
+    const source = document.getElementById(`source${quizId}_${i}`);
+    const target = document.getElementById(`target${quizId}_${i}`);
     const shuffled = [...data.parts].sort(() => Math.random() - 0.5);
     shuffled.forEach(p => {
       const item = document.createElement('div');
       item.className = 'item';
       item.textContent = p;
-      list.appendChild(item);
+      source.appendChild(item);
     });
-    new Sortable(list, { animation: 150 });
+    new Sortable(source, { 
+      group: 'reorder' + quizId + i, 
+      animation: 150,
+      sort: true
+    });
+    new Sortable(target, { 
+      group: 'reorder' + quizId + i, 
+      animation: 150,
+      sort: true,
+      onAdd: function() { target.classList.remove('empty'); },
+      onRemove: function() { if (target.children.length === 0) target.classList.add('empty'); }
+    });
   });
 
   // 排句成段
@@ -308,7 +325,7 @@ function submitQuiz(quizId) {
   html += '<h4>重組句子</h4>';
   q.reorder.forEach((idx, i) => {
     const data = reorderData[idx];
-    const list = document.getElementById(`sort${quizId}_${i}`);
+    const list = document.getElementById(`target${quizId}_${i}`);
     const user = Array.from(list.children).map(c => c.textContent).join('');
     const isCorrect = user === data.answer;
     if (isCorrect) totalCorrect++;
