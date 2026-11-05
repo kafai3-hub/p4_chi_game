@@ -266,18 +266,23 @@ function initQuiz(quizId) {
   q.para.forEach((idx, i) => {
     const data = paraData[idx];
     const div = document.createElement('div');
-    div.innerHTML = `<h4>第 ${i+1} 題</h4><div class="answer-line" id="para${quizId}_${i}"></div>`;
+    div.innerHTML = `<h4>第 ${i+1} 題</h4>
+      <div class="source-row" id="paraSource${quizId}_${i}"></div>
+      <div class="answer-line" id="para${quizId}_${i}"></div>`;
     paraCont.appendChild(div);
-    const list = document.getElementById(`para${quizId}_${i}`);
+    const source = document.getElementById(`paraSource${quizId}_${i}`);
+    const target = document.getElementById(`para${quizId}_${i}`);
     const shuffled = [...data.sentences].sort(() => Math.random() - 0.5);
     shuffled.forEach(s => {
       const item = document.createElement('div');
       item.className = 'drag-item';
       item.dataset.key = s.k;
       item.textContent = `${s.k}. ${s.t}`;
-      list.appendChild(item);
+      source.appendChild(item);
     });
-    new Sortable(list, { animation: 150, ghostClass: 'sortable-ghost' });
+    const groupName = 'para' + quizId + '_' + i;
+    new Sortable(source, { group: groupName, animation: 150, ghostClass: 'sortable-ghost' });
+    new Sortable(target, { group: groupName, animation: 150, ghostClass: 'sortable-ghost' });
   });
 
   // 閱讀理解
