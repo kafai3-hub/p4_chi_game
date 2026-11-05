@@ -2,8 +2,9 @@
 <html lang="zh-HK">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>小四中文小測 - 滑鼠拖曳版</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>小四中文小測 - Safari 拖曳版</title>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <style>
 * { box-sizing: border-box; }
 body { font-family: "PingFang HK", "Microsoft JhengHei", sans-serif; margin: 0; background: #f5f7fa; color: #333; }
@@ -15,20 +16,19 @@ nav button.active { background: #2980b9; }
 .section.active { display: block; }
 h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 0.4rem; }
 .quiz-part { margin: 1.2rem 0; padding: 1rem; background: #f8f9fa; border-radius: 8px; }
-.source-row, .answer-line { display: flex; flex-wrap: wrap; gap: 0.4rem; min-height: 50px; padding: 0.6rem; border-radius: 6px; margin: 0.5rem 0; }
+.source-row, .answer-line { display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 56px; padding: 0.7rem; border-radius: 8px; margin: 0.5rem 0; align-items: center; }
 .source-row { background: #ecf0f1; border: 1px solid #bdc3c7; }
 .answer-line { background: #e8f6f3; border: 2px dashed #27ae60; }
 .answer-line:empty::before { content: "把詞語拖到這裡"; color: #95a5a6; font-style: italic; }
-.drag-item { background: #fff; padding: 0.5rem 0.8rem; border: 1px solid #3498db; border-radius: 6px; cursor: grab; user-select: none; }
-.drag-item:active { cursor: grabbing; opacity: 0.7; }
-.drag-item button { margin-left: 0.3rem; padding: 0.1rem 0.4rem; font-size: 0.75rem; cursor: pointer; }
-.drag-item.over { border-color: #e74c3c; }
+.drag-item { background: #fff; padding: 0.6rem 0.9rem; border: 1px solid #3498db; border-radius: 6px; cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none; }
+.drag-item:active { cursor: grabbing; }
 button.submit { background: #27ae60; color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 6px; font-size: 1.1rem; margin: 1rem 0; cursor: pointer; }
 .result { margin-top: 1rem; padding: 1rem; background: #e8f6f3; border-radius: 6px; display: none; }
 .result.show { display: block; }
 .correct { color: #27ae60; font-weight: bold; }
 .wrong { color: #e74c3c; font-weight: bold; }
 .passage { background: #fff; padding: 1rem; border-left: 4px solid #3498db; margin: 1rem 0; line-height: 1.7; }
+.passage p { margin: 0.6rem 0; }
 .question { margin: 1rem 0; }
 .mcq label { display: block; margin: 0.3rem 0; padding: 0.4rem; background: #f8f9fa; border-radius: 4px; cursor: pointer; }
 input[type="text"] { padding: 0.5rem; width: 100%; max-width: 280px; font-size: 1rem; }
@@ -40,7 +40,7 @@ input[type="text"] { padding: 0.5rem; width: 100%; max-width: 280px; font-size: 
 <body>
 <header>
   <h1>小四中文小測</h1>
-  <p>每一小測：4題重組句子 + 4題排句成段 + 2篇閱讀理解 | 滑鼠拖曳版</p>
+  <p>每一小測：4題重組句子 + 4題排句成段 + 2篇閱讀理解 | Safari 拖曳版</p>
 </header>
 
 <nav>
@@ -81,7 +81,8 @@ function saveLog(entry) {
 function showSection(id, btn) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  const section = document.getElementById(id);
+  if (section) section.classList.add('active');
   if (btn) btn.classList.add('active');
   if (id === 'dashboard') renderDashboard();
 }
@@ -96,6 +97,7 @@ function clearLogs() {
 function renderDashboard() {
   const logs = getLogs();
   const div = document.getElementById('dashContent');
+  if (!div) return;
   if (logs.length === 0) {
     div.innerHTML = '<p>尚無作答紀錄。</p>';
     return;
@@ -124,7 +126,6 @@ function renderDashboard() {
   div.innerHTML = html;
 }
 
-// 重組句子資料
 const reorderData = [
   { id: 1, parts: ['老師', '耐心', '經過', '我', '指導', '的', '終於', '明白', '，', '。'], answer: '經過老師耐心的指導，我終於明白。', explain: '先講「經過老師的指導」，再講結果「我終於明白」。' },
   { id: 2, parts: ['煙花', '夜空', '五彩', '點綴', '的', '美麗', '極了', '，', '。'], answer: '五彩的煙花點綴夜空，美麗極了。', explain: '形容詞「五彩的」修飾「煙花」，再描述效果。' },
@@ -136,7 +137,6 @@ const reorderData = [
   { id: 8, parts: ['下雨天', '我們', '改', '在', '室內', '進行', '體育課', '，', '以免', '弄濕', '衣服', '。'], answer: '下雨天我們改在室內進行體育課，以免弄濕衣服。', explain: '因果關係：因為下雨所以改地點。' }
 ];
 
-// 排句成段資料
 const paraData = [
   { id: 1, sentences: [
     {k:'A', t:'因此我們決定下星期再去一次'},
@@ -188,7 +188,6 @@ const paraData = [
   ], answer: 'B D A C', explain: '困難 → 鼓勵 → 堅持 → 成功。' }
 ];
 
-// 閱讀資料（精簡）
 const readings = [
   {
     id: 1, title: '香江麵包店',
@@ -205,109 +204,30 @@ const readings = [
     id: 2, title: '小麻雀的故事',
     passage: `一個寒冷的中午，小麻雀躲在樹上的鳥窩裏，不願意起牀。他沒有朋友，即使起來了，也是過着孤單、沉悶的日子。\n這時候，小黃狗來到樹下。他知道小麻雀孤單，於是邀請他一起玩耍。小麻雀飛到樹下，可是他一看見小黃狗，就害怕得縮成一團。小黃狗還未說話，小麻雀就飛走了，心想：小黃狗的身體太龐大了！不知道他會不會咬我，真可怕……\n到了下午，小蝴蝶翩翩飛到花叢，親切地飛近小麻雀，說：「我們做朋友吧！」小麻雀很高興，但忽然想起甚麼，便跟小蝴蝶說：「別人說你貪玩，不勤勞採蜜，儲存冬糧。我——我不想結交懶惰的朋友。」於是，小麻雀與小蝴蝶當不成朋友了。\n小麻雀悶悶不樂，他看見老山羊，問：「山羊伯伯，為甚麼我老是交不到朋友？」\n老山羊語重心長地說：「我年少時，也曾經以貌取人和聽信謠言，結果一個朋友也沒有，後來我知道這是不對的。小黃狗曾送給我鮮美的青草；小蝴蝶的生命只有一至四個月，他不是懶惰，而是希望在有生之年能看遍美麗的大自然。」\n小麻雀聽了山羊的說話後，感到十分慚愧。他決定向小黃狗和小蝴蝶道歉，希望他們原諒自己，並且願意跟他做朋友。`,
     questions: [
-      { type: 'fill', q: '爸爸(　　)地告誡我。', ans: '語重心長', explain: '山羊語重心長地說。' },
-      { type: 'mcq', q: '為甚麼小麻雀不起牀？', options: ['A. 下雪', 'B. 生病', 'C. 沒喚醒', 'D. 沒有朋友'], ans: 'D', explain: '沒有朋友，孤單沉悶。' }
-    ]
-  },
-  {
-    id: 3, title: '校園清潔日',
-    passage: `上星期五是學校的清潔日。老師把全班分成幾個小組，負責不同的地方。我們小組負責清潔課室的窗和黑板。\n一開始，大家都很起勁。小明負責擦窗，我負責擦黑板。可是擦了不久，小明就說：「好累啊，我休息一下吧。」於是他坐下來玩手機。我雖然也累，但想到如果大家都不做，課室就不會乾淨，所以繼續努力。\n過了半小時，老師來巡視。她看見小明在玩手機，便溫柔地說：「小明，清潔是大家的責任，我們要一起努力才行。」小明聽了很不好意思，立刻起來幫忙。最後，我們小組的課室被評為最乾淨。\n回家後，我告訴媽媽這件事。媽媽說：「能夠堅持完成自己的責任，是很值得驕傲的。」`,
-    questions: [
-      { type: 'fill', q: '老師______地說。', ans: '溫柔', explain: '溫柔地說。' },
-      { type: 'mcq', q: '主旨是甚麼？', options: ['A. 介紹活動', 'B. 責任感', 'C. 批評', 'D. 讚美'], ans: 'B', explain: '強調責任。' }
-    ]
-  },
-  {
-    id: 4, title: '海洋公園之旅',
-    passage: `暑假的一天，爸爸帶我和妹妹去海洋公園。一進園，我們先去看海豚表演。海豚跳得很高，還能跟著音樂跳舞，真是精彩極了！\n接着我們坐了過山車。妹妹一開始很害怕，緊緊抓住我的手。但坐完後她說：「原來沒那麼可怕，下次還要再坐！」\n中午我們吃了漢堡包和薯條。下午我們參觀了熊貓館。熊貓正在吃竹子，動作很慢，看起來很可愛。\n回家的路上，妹妹說：「今天是我最開心的一天！」爸爸笑着說：「只要一家人一起出遊，每天都可以是開心的一天。」`,
-    questions: [
-      { type: 'fill', q: '還能______音樂跳舞。', ans: '跟着', explain: '跟著音樂。' },
-      { type: 'mcq', q: '主旨是甚麼？', options: ['A. 介紹設施', 'B. 一家人開心', 'C. 可怕', 'D. 可愛'], ans: 'B', explain: '一家人出遊快樂。' }
+      { type: 'fill', q: '請在第5段找出適當詞語：老山羊______地說。', ans: '語重心長', explain: '第5段「語重心長地說」。' },
+      { type: 'mcq', q: '根據第1段，為甚麼小麻雀不起牀？', options: ['A. 因為下雪', 'B. 因為生病', 'C. 因為沒有朋友陪伴', 'D. 因為小黃狗沒叫他'], ans: 'C', explain: '第1段說沒有朋友，過着孤單沉悶的日子。' },
+      { type: 'mcq', q: '小麻雀為甚麼不和小蝴蝶做朋友？', options: ['A. 因為小蝴蝶太大', 'B. 因為聽信謠言說它懶惰', 'C. 因為小蝴蝶咬人', 'D. 因為沒有時間'], ans: 'B', explain: '第3段提到聽信謠言。' },
+      { type: 'mcq', q: '這篇故事的主旨是甚麼？', options: ['A. 不要以貌取人', 'B. 小動物很可愛', 'C. 冬天很冷', 'D. 要多交朋友'], ans: 'A', explain: '山羊提醒不要以貌取人和聽信謠言。' }
     ]
   }
 ];
 
 const quizzes = [
   { id: 1, reorder: [0,1,2,3], para: [0,1,2,3], readings: [0,1] },
-  { id: 2, reorder: [4,5,6,7], para: [4,5,6,7], readings: [2,3] }
+  { id: 2, reorder: [4,5,6,7], para: [4,5,6,7], readings: [0,1] }
 ];
-
-// 拖曳功能
-let draggedItem = null;
-
-function makeDraggable(item) {
-  item.draggable = true;
-  item.addEventListener('dragstart', (e) => {
-    draggedItem = item;
-    e.dataTransfer.effectAllowed = 'move';
-    setTimeout(() => item.style.opacity = '0.5', 0);
-  });
-  item.addEventListener('dragend', () => {
-    item.style.opacity = '1';
-    draggedItem = null;
-  });
-  // Add up/down buttons for iPad / touch
-  const up = document.createElement('button');
-  up.textContent = '↑';
-  up.onclick = (e) => { e.stopPropagation(); moveSibling(item, -1); };
-  const down = document.createElement('button');
-  down.textContent = '↓';
-  down.onclick = (e) => { e.stopPropagation(); moveSibling(item, 1); };
-  item.appendChild(up);
-  item.appendChild(down);
-}
-
-function moveSibling(item, dir) {
-  const parent = item.parentNode;
-  const siblings = Array.from(parent.children);
-  const idx = siblings.indexOf(item);
-  const newIdx = idx + dir;
-  if (newIdx < 0 || newIdx >= siblings.length) return;
-  if (dir === -1) parent.insertBefore(item, siblings[newIdx]);
-  else parent.insertBefore(siblings[newIdx], item);
-}
-
-function setupDropZone(zone) {
-  zone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  });
-  zone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    if (!draggedItem) return;
-    const afterElement = getDragAfterElement(zone, e.clientX);
-    if (afterElement == null) {
-      zone.appendChild(draggedItem);
-    } else {
-      zone.insertBefore(draggedItem, afterElement);
-    }
-  });
-}
-
-function getDragAfterElement(container, x) {
-  const draggableElements = [...container.querySelectorAll('.drag-item:not(.dragging)')];
-  return draggableElements.reduce((closest, child) => {
-    const box = child.getBoundingClientRect();
-    const offset = x - box.left - box.width / 2;
-    if (offset < 0 && offset > closest.offset) {
-      return { offset: offset, element: child };
-    } else {
-      return closest;
-    }
-  }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
 
 function initQuiz(quizId) {
   const q = quizzes.find(x => x.id === quizId);
   const cont = document.getElementById(`q${quizId}content`);
+  if (!cont) return;
   cont.innerHTML = '';
 
-  // 重組句子 - 上方來源 + 下方答題線
+  // 重組句子
   const reorderPart = document.createElement('div');
   reorderPart.className = 'quiz-part';
-  reorderPart.innerHTML = '<h3>一、重組句子（從上方拖到下方答題線，可左右調整）</h3>';
+  reorderPart.innerHTML = '<h3>一、重組句子（拖曳詞語到下方答題線）</h3>';
   const reorderCont = document.createElement('div');
-  reorderCont.id = 'reorderQ' + quizId;
   reorderPart.appendChild(reorderCont);
   cont.appendChild(reorderPart);
 
@@ -321,25 +241,25 @@ function initQuiz(quizId) {
 
     const source = document.getElementById(`source${quizId}_${i}`);
     const target = document.getElementById(`target${quizId}_${i}`);
-    setupDropZone(source);
-    setupDropZone(target);
 
     const shuffled = [...data.parts].sort(() => Math.random() - 0.5);
     shuffled.forEach(p => {
       const item = document.createElement('div');
       item.className = 'drag-item';
       item.textContent = p;
-      makeDraggable(item);
       source.appendChild(item);
     });
+
+    const groupName = 'reorder' + quizId + '_' + i;
+    new Sortable(source, { group: groupName, animation: 150, ghostClass: 'sortable-ghost' });
+    new Sortable(target, { group: groupName, animation: 150, ghostClass: 'sortable-ghost' });
   });
 
-  // 排句成段（同樣拖曳）
+  // 排句成段
   const paraPart = document.createElement('div');
   paraPart.className = 'quiz-part';
   paraPart.innerHTML = '<h3>二、排句成段（拖曳排列）</h3>';
   const paraCont = document.createElement('div');
-  paraCont.id = 'paraQ' + quizId;
   paraPart.appendChild(paraCont);
   cont.appendChild(paraPart);
 
@@ -349,16 +269,15 @@ function initQuiz(quizId) {
     div.innerHTML = `<h4>第 ${i+1} 題</h4><div class="answer-line" id="para${quizId}_${i}"></div>`;
     paraCont.appendChild(div);
     const list = document.getElementById(`para${quizId}_${i}`);
-    setupDropZone(list);
     const shuffled = [...data.sentences].sort(() => Math.random() - 0.5);
     shuffled.forEach(s => {
       const item = document.createElement('div');
       item.className = 'drag-item';
       item.dataset.key = s.k;
       item.textContent = `${s.k}. ${s.t}`;
-      makeDraggable(item);
       list.appendChild(item);
     });
+    new Sortable(list, { animation: 150, ghostClass: 'sortable-ghost' });
   });
 
   // 閱讀理解
@@ -366,14 +285,13 @@ function initQuiz(quizId) {
   readPart.className = 'quiz-part';
   readPart.innerHTML = '<h3>三、閱讀理解</h3>';
   const readCont = document.createElement('div');
-  readCont.id = 'readQ' + quizId;
   readPart.appendChild(readCont);
   cont.appendChild(readPart);
 
   q.readings.forEach((idx, ri) => {
     const r = readings[idx];
-    let paras = r.passage.split('\n').filter(p => p.trim());
-    let numbered = paras.map((p, idx) => `<p><strong>第${idx+1}段</strong>　${p}</p>`).join('');
+    const paras = r.passage.split('\n').filter(p => p.trim());
+    const numbered = paras.map((p, pidx) => `<p><strong>第${pidx+1}段</strong>　${p}</p>`).join('');
     let rhtml = `<h4>閱讀 ${ri+1}：${r.title}</h4><div class="passage">${numbered}</div>`;
     r.questions.forEach((qq, qi) => {
       rhtml += `<div class="question"><strong>${qi+1}. ${qq.q}</strong><br>`;
@@ -401,7 +319,7 @@ function submitQuiz(quizId) {
   q.reorder.forEach((idx, i) => {
     const data = reorderData[idx];
     const list = document.getElementById(`target${quizId}_${i}`);
-    const user = Array.from(list.children).map(c => c.textContent).join('');
+    const user = list ? Array.from(list.children).map(c => c.textContent).join('') : '';
     const isCorrect = user === data.answer;
     if (isCorrect) totalCorrect++;
     totalQ++;
@@ -414,7 +332,7 @@ function submitQuiz(quizId) {
   q.para.forEach((idx, i) => {
     const data = paraData[idx];
     const list = document.getElementById(`para${quizId}_${i}`);
-    const user = Array.from(list.children).map(c => c.dataset.key).join(' ');
+    const user = list ? Array.from(list.children).map(c => c.dataset.key).join(' ') : '';
     const isCorrect = user === data.answer;
     if (isCorrect) totalCorrect++;
     totalQ++;
@@ -423,7 +341,6 @@ function submitQuiz(quizId) {
     saveLog({ section: `小測${quizId}-排句`, correct: isCorrect, detail: `第${i+1}題：${user}` });
   });
 
-  // 閱讀理解
   html += '<h4>閱讀理解</h4>';
   q.readings.forEach((idx, ri) => {
     const r = readings[idx];
@@ -448,14 +365,22 @@ function submitQuiz(quizId) {
   });
 
   html = `<div class="score">小測 ${quizId} 得分：${totalCorrect}/${totalQ}</div>` + html;
-  document.getElementById(`q${quizId}result`).innerHTML = html;
-  document.getElementById(`q${quizId}result`).classList.add('show');
+  const resultDiv = document.getElementById(`q${quizId}result`);
+  if (resultDiv) {
+    resultDiv.innerHTML = html;
+    resultDiv.classList.add('show');
+  }
 }
 
 window.onload = function() {
-  initQuiz(1);
-  initQuiz(2);
-  renderDashboard();
+  try {
+    initQuiz(1);
+    initQuiz(2);
+    renderDashboard();
+  } catch(e) {
+    console.error(e);
+    alert('載入時出現問題，請重新整理頁面。');
+  }
 };
 </script>
 </body>
