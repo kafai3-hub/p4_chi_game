@@ -35,6 +35,8 @@ input[type="text"] { padding: 0.5rem; width: 100%; max-width: 280px; font-size: 
 .dashboard-card { font-size: 0.85rem; padding: 0.6rem; margin: 0.4rem 0; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
 .log-item { font-size: 0.75rem; margin: 0.2rem 0; padding: 0.3rem; background: #fff3cd; border-radius: 4px; }
 .score { font-size: 1.1rem; font-weight: bold; }
+.answer-box { margin-top: 1rem; padding: 1rem; background: #e8f6f3; border-radius: 6px; display: none; }
+.answer-box.show { display: block; }
 </style>
 </head>
 <body>
@@ -89,6 +91,23 @@ input[type="text"] { padding: 0.5rem; width: 100%; max-width: 280px; font-size: 
     <p>4. 祖母雖然已經七十多歲，但每天仍會登山晨運，真是（　　）。</p>
     <p>5. 經過十多天（　　）地趕工，我們終於在聖誕節前完成了任務。</p>
   </div>
+
+  <button class="submit" onclick="document.getElementById('ans1').classList.toggle('show')">檢查答案</button>
+  <div id="ans1" class="answer-box">
+    <h4>不供詞填充答案</h4>
+    <p>1. 國寶、毛茸茸、引人注目<br>解釋：大熊貓是中國國寶，全身毛茸茸，特別引人注目。</p>
+    <p>2. 豎、烏黑、墨鏡<br>解釋：耳朵一直豎着，眼睛烏黑，眼眶外像戴了墨鏡。</p>
+    <p>3. 呼呼大睡<br>解釋：躺在地上呼呼大睡的樣子很可愛。</p>
+    <p>4. 迫不及待<br>解釋：迫不及待地跑到玻璃前。</p>
+    <p>5. 一搶而光、楚楚可憐<br>解釋：大熊貓把食物一搶而光，小熊貓顯得楚楚可憐。</p>
+    <h4>供詞填充答案</h4>
+    <p>1. 有目共睹</p>
+    <p>2. 煥然一新</p>
+    <p>3. 錯綜複雜</p>
+    <p>4. 老當益壯</p>
+    <p>5. 披星戴月</p>
+  </div>
+
 </div>
 
 <div id="unit2" class="section">
@@ -112,6 +131,23 @@ input[type="text"] { padding: 0.5rem; width: 100%; max-width: 280px; font-size: 
     <p>4. 這座建築物設計獨特，造型優美，宛如（　　），讓人驚歎不已。</p>
     <p>5. 看到夕陽西下的美景，我不禁（　　），寫下一篇日記。</p>
   </div>
+
+  <button class="submit" onclick="document.getElementById('ans2').classList.toggle('show')">檢查答案</button>
+  <div id="ans2" class="answer-box">
+    <h4>不供詞填充答案</h4>
+    <p>1. 神秘無比、望而生畏</p>
+    <p>2. 陰森、恐怖</p>
+    <p>3. 神出鬼沒、鬼鬼祟祟</p>
+    <p>4. 不折不扣</p>
+    <p>5. 仰望</p>
+    <h4>供詞填充答案</h4>
+    <p>1. 如沐春風</p>
+    <p>2. 綽綽有餘</p>
+    <p>3. 別開生面</p>
+    <p>4. 鬼斧神工</p>
+    <p>5. 觸景生情</p>
+  </div>
+
 </div>
 
 <div id="unit3" class="section">
@@ -135,6 +171,23 @@ input[type="text"] { padding: 0.5rem; width: 100%; max-width: 280px; font-size: 
     <p>4. 從早到晚，經紅磡隧道來往港九的車輛（　　），十分熱鬧。</p>
     <p>5. 我和弟弟在海洋公園玩得（　　）。</p>
   </div>
+
+  <button class="submit" onclick="document.getElementById('ans3').classList.toggle('show')">檢查答案</button>
+  <div id="ans3" class="answer-box">
+    <h4>不供詞填充答案</h4>
+    <p>1. 悠閒、細味</p>
+    <p>2. 甜絲絲、湧上</p>
+    <p>3. 煩惱、許願</p>
+    <p>4. 志忑不安</p>
+    <p>5. 徬徨無助、嘗試</p>
+    <h4>供詞填充答案</h4>
+    <p>1. 捷足先登</p>
+    <p>2. 車水馬龍</p>
+    <p>3. 名不虛傳</p>
+    <p>4. 川流不息</p>
+    <p>5. 樂而忘返</p>
+  </div>
+
 </div>
 
 <div id="dashboard" class="section">
